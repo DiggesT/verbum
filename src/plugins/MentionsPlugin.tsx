@@ -657,7 +657,7 @@ function useMentions(
 }
 
 const MentionsPlugin = (props: {
-  searchData: (p: string) => string[];
+  searchData?: (p: string) => string[];
 }): JSX.Element => {
   const { searchData } = props;
   const [editor] = useLexicalComposerContext();
