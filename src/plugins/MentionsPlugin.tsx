@@ -41,7 +41,7 @@ type MentionMatch = {
   replaceableString: string;
 };
 
-type MentionData = <A>(p: A) => A[];
+type MentionData = (p: string) => string[];
 
 type Resolution = {
   match: MentionMatch;
