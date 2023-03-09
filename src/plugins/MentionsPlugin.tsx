@@ -655,9 +655,7 @@ function useMentions(
       );
 }
 
-const MentionsPlugin = (props: {
-  searchData?: <A>(p: A) => A[];
-}): JSX.Element => {
+const MentionsPlugin = (props: { searchData?: MentionData }): JSX.Element => {
   const { searchData } = props;
   const [editor] = useLexicalComposerContext();
   return useMentions(editor, searchData);
