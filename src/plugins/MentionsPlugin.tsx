@@ -41,6 +41,8 @@ type MentionMatch = {
   replaceableString: string;
 };
 
+type MentionData = <A>(p: A) => A[];
+
 type Resolution = {
   match: MentionMatch;
   range: Range;
@@ -117,7 +119,7 @@ const mentionsCache = new Map();
 
 const lookupService = {
   search(
-    mentionData: (p: string) => string[],
+    mentionData: MentionData,
     string: string,
     callback: (results: Array<string> | null) => void
   ): void {
@@ -132,10 +134,7 @@ const lookupService = {
   },
 };
 
-function useMentionLookupService(
-  mentionString,
-  mentionData: (p: string) => string[]
-) {
+function useMentionLookupService(mentionString, mentionData: MentionData) {
   const [results, setResults] = useState<Array<string> | null>(null);
 
   useEffect(() => {
@@ -204,7 +203,7 @@ function MentionsTypeahead({
   close: () => void;
   editor: LexicalEditor;
   resolution: Resolution;
-  mentionData: (p: string) => string[];
+  mentionData: MentionData;
 }): JSX.Element {
   const divRef = useRef(null);
   const match = resolution.match;
@@ -586,7 +585,7 @@ function isSelectionOnEntityBoundary(
 
 function useMentions(
   editor: LexicalEditor,
-  mentionData: (p: string) => string[]
+  mentionData: MentionData
 ): JSX.Element {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
@@ -657,7 +656,7 @@ function useMentions(
 }
 
 const MentionsPlugin = (props: {
-  searchData?: (p: string) => string[];
+  searchData?: <A>(p: A) => A[];
 }): JSX.Element => {
   const { searchData } = props;
   const [editor] = useLexicalComposerContext();
