@@ -1,5 +1,6 @@
 import EditorComposer from './EditorComposer';
 import Editor from './Editor';
+import MentionsPlugin from './plugins/MentionsPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin/ToolbarPlugin';
 
 import {
@@ -28,6 +29,7 @@ import Divider from './ui/Divider';
 export {
   EditorComposer,
   Editor,
+  MentionsPlugin,
   ToolbarPlugin,
   AlignDropdown,
   BackgroundColorPicker,
