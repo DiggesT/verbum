@@ -41,7 +41,7 @@ type MentionMatch = {
   replaceableString: string;
 };
 
-type MentionData = (p: string) => string[];
+type MentionData = (p: string) => Promise<string[]>;
 
 type Resolution = {
   match: MentionMatch;
@@ -123,12 +123,12 @@ const lookupService = {
     string: string,
     callback: (results: Array<string> | null) => void
   ): void {
-    setTimeout(() => {
+    setTimeout(async () => {
       const results = mentionData(string);
-      if (results.length === 0) {
+      if ((await results).length === 0) {
         callback(null);
       } else {
-        callback(results);
+        callback(await results);
       }
     }, 500);
   },
