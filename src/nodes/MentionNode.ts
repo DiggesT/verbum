@@ -25,6 +25,8 @@ export type SerializedMentionNode = Spread<
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
   __mention: string;
+  __url:string;
+  __isLink: boolean;
 
   static getType(): string {
     return 'mention';
@@ -43,9 +45,11 @@ export class MentionNode extends TextNode {
     return node;
   }
 
-  constructor(mentionName: string, text?: string, key?: NodeKey) {
+  constructor(mentionName: string, text?: string, key?: NodeKey, isLink?: boolean, url?: string) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
+    this.__url = url;
+    this.__isLink = isLink;
   }
 
   exportJSON(): SerializedMentionNode {
@@ -58,10 +62,19 @@ export class MentionNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.style.cssText = mentionStyle;
-    dom.className = 'mention';
-    return dom;
+    if (this.__isLink) {
+      const linkElement = document.createElement('a');
+      linkElement.style.cssText = mentionStyle;
+      linkElement.href = this.__url;
+      linkElement.text = `@${this.__mention}`
+      return linkElement;
+    } else
+    {
+      const mentionElement = super.createDOM(config);
+      mentionElement.style.cssText = mentionStyle;
+      mentionElement.className = 'mention';
+      return mentionElement;
+    }
   }
 
   isTextEntity(): true {
@@ -69,8 +82,8 @@ export class MentionNode extends TextNode {
   }
 }
 
-export function $createMentionNode(mentionName: string): MentionNode {
-  const mentionNode = new MentionNode(mentionName);
+export function $createMentionNode(mentionName: string, isLink?: boolean, url?: string): MentionNode {
+  const mentionNode = new MentionNode(mentionName, undefined, undefined, isLink, url);
   mentionNode.setMode('segmented').toggleDirectionless();
   return mentionNode;
 }

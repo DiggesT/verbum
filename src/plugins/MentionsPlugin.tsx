@@ -34,6 +34,7 @@ import useLayoutEffect from '../shared/src/useLayoutEffect';
 
 import { $createMentionNode, MentionNode } from '../nodes/MentionNode';
 import { useTranslation } from 'react-i18next';
+import { $createLinkNode } from '@lexical/link';
 
 type MentionMatch = {
   leadOffset: number;
@@ -199,11 +200,15 @@ function MentionsTypeahead({
   editor,
   resolution,
   mentionData,
+  isLink,
+  url,
 }: {
   close: () => void;
   editor: LexicalEditor;
   resolution: Resolution;
   mentionData: MentionData;
+  isLink?: boolean;
+  url?: string;
 }): JSX.Element {
   const divRef = useRef(null);
   const match = resolution.match;
@@ -237,7 +242,13 @@ function MentionsTypeahead({
 
     close();
 
-    createMentionNodeFromSearchResult(editor, selectedEntry, match);
+    createMentionNodeFromSearchResult(
+      editor,
+      selectedEntry,
+      match,
+      isLink,
+      url
+    );
   }, [close, match, editor, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(
@@ -517,7 +528,9 @@ function getMentionOffset(
 function createMentionNodeFromSearchResult(
   editor: LexicalEditor,
   entryText: string,
-  match: MentionMatch
+  match: MentionMatch,
+  isLink?: boolean,
+  url?: string
 ): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -558,7 +571,7 @@ function createMentionNodeFromSearchResult(
       [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
-    const mentionNode = $createMentionNode(entryText);
+    const mentionNode = $createMentionNode(entryText, isLink, url);
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
   });
@@ -585,7 +598,9 @@ function isSelectionOnEntityBoundary(
 
 function useMentions(
   editor: LexicalEditor,
-  mentionData: MentionData
+  mentionData: MentionData,
+  isLink?: boolean,
+  url?: string
 ): JSX.Element {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
@@ -650,15 +665,21 @@ function useMentions(
           resolution={resolution}
           editor={editor}
           mentionData={mentionData}
+          isLink={isLink}
+          url={url}
         />,
         document.body
       );
 }
 
-const MentionsPlugin = (props: { searchData?: MentionData }): JSX.Element => {
-  const { searchData } = props;
+const MentionsPlugin = (props: {
+  searchData?: MentionData;
+  isLink?: boolean;
+  url?: string;
+}): JSX.Element => {
+  const { searchData, isLink, url } = props;
   const [editor] = useLexicalComposerContext();
-  return useMentions(editor, searchData);
+  return useMentions(editor, searchData, isLink, url);
 };
 
 export default MentionsPlugin;
