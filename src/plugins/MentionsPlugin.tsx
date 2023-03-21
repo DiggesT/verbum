@@ -201,14 +201,14 @@ function MentionsTypeahead({
   resolution,
   mentionData,
   isLink,
-  url,
+  getUrl,
 }: {
   close: () => void;
   editor: LexicalEditor;
   resolution: Resolution;
   mentionData: MentionData;
   isLink?: boolean;
-  url?: string;
+  getUrl?: () => string;
 }): JSX.Element {
   const divRef = useRef(null);
   const match = resolution.match;
@@ -247,7 +247,7 @@ function MentionsTypeahead({
       selectedEntry,
       match,
       isLink,
-      url
+      getUrl
     );
   }, [close, match, editor, results, selectedIndex]);
 
@@ -530,7 +530,7 @@ function createMentionNodeFromSearchResult(
   entryText: string,
   match: MentionMatch,
   isLink?: boolean,
-  url?: string
+  getUrl?: () => string
 ): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -571,7 +571,7 @@ function createMentionNodeFromSearchResult(
       [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
-    const mentionNode = $createMentionNode(entryText, isLink, url);
+    const mentionNode = $createMentionNode(entryText, isLink, getUrl());
     nodeToReplace.replace(mentionNode);
     mentionNode.select();
   });
@@ -600,7 +600,7 @@ function useMentions(
   editor: LexicalEditor,
   mentionData: MentionData,
   isLink?: boolean,
-  url?: string
+  getUrl?: () => string
 ): JSX.Element {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
@@ -666,7 +666,7 @@ function useMentions(
           editor={editor}
           mentionData={mentionData}
           isLink={isLink}
-          url={url}
+          getUrl={getUrl}
         />,
         document.body
       );
@@ -675,11 +675,11 @@ function useMentions(
 const MentionsPlugin = (props: {
   searchData?: MentionData;
   isLink?: boolean;
-  url?: string;
+  getUrl?: () => string;
 }): JSX.Element => {
-  const { searchData, isLink, url } = props;
+  const { searchData, isLink, getUrl } = props;
   const [editor] = useLexicalComposerContext();
-  return useMentions(editor, searchData, isLink, url);
+  return useMentions(editor, searchData, isLink, getUrl);
 };
 
 export default MentionsPlugin;

@@ -66,7 +66,7 @@ export class MentionNode extends TextNode {
       const linkElement = document.createElement('a');
       linkElement.style.cssText = mentionStyle;
       linkElement.href = this.__url;
-      linkElement.text = `@${this.__mention}`
+      linkElement.text = this.__mention
       return linkElement;
     } else
     {
