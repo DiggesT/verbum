@@ -12,6 +12,13 @@ import * as ReactDOM from 'react-dom';
 
 import { $createMentionNode } from '../nodes/MentionNode';
 
+type MentionData = {
+  value: string;
+  url?: string;
+};
+
+type SearchData = (p: string) => Promise<MentionData[]>;
+
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
 const NAME = '\\b[A-Z][^\\s' + PUNCTUATION + ']';
@@ -81,98 +88,24 @@ const SUGGESTION_LIST_LENGTH_LIMIT = 5;
 
 const mentionsCache = new Map();
 
-const dummyMentionsData = [
-  'Aayla Secura',
-  'Admiral Dodd Rancit',
-  'Aurra Sing',
-  'BB-8',
-  'Bo-Katan Kryze',
-  'Breha Antilles-Organa',
-  'C-3PO',
-  'Captain Quarsh Panaka',
-  'Chewbacca',
-  'Darth Tyranus',
-  'Daultay Dofine',
-  'Dexter Jettster',
-  'Ebe E. Endocott',
-  'Eli Vanto',
-  'Ezra Bridger',
-  'Faro Argyus',
-  'Finis Valorum',
-  'FN-2003',
-  'Garazeb "Zeb" Orrelios',
-  'Grand Inquisitor',
-  'Greeata Jendowanian',
-  'Hammerhead',
-  'Han Solo',
-  'Hevy',
-  'Hondo Ohnaka',
-  'Ima-Gun Di',
-  'Inquisitors',
-  'Inspector Thanoth',
-  'Jabba',
-  'Janus Greejatus',
-  'Jaxxon',
-  'K-2SO',
-  'Kanan Jarrus',
-  'Kylo Ren',
-  'L3-37',
-  'Lieutenant Kaydel Ko Connix',
-  'Luke Skywalker',
-  'Mace Windu',
-  'Maximilian Veers',
-  'Mother Talzin',
-  'Nahdar Vebb',
-  'Nahdonnis Praji',
-  'Nien Nunb',
-  'Obi-Wan Kenobi',
-  'Odd Ball',
-  'Orrimarko',
-  'Petty Officer Thanisson',
-  'Pooja Naberrie',
-  'PZ-4CO',
-  'Quarrie',
-  'Quiggold',
-  'Quinlan Vos',
-  'R2-D2',
-  'Raymus Antilles',
-  'Ree-Yees',
-  'Sana Starros',
-  'Shmi Skywalker',
-  'Shu Mai',
-  'Tallissan Lintra',
-  'Tarfful',
-  'Thane Kyrell',
-  'U9-C4',
-  'Unkar Plutt',
-  'Val Beckett',
-  'Vice Admiral Amilyn Holdo',
-  'Vober Dand',
-  'WAC-47',
-  'Wedge Antilles',
-  'Wicket W. Warrick',
-  'Xamuel Lennox',
-  'Yaddle',
-  'Yarael Poof',
-  'Yoda',
-  'Zam Wesell',
-  'Ziro the Hutt',
-  'Zuckuss',
-];
-
-const dummyLookupService = {
-  search(string: string, callback: (results: Array<string>) => void): void {
-    setTimeout(() => {
-      const results = dummyMentionsData.filter((mention) =>
-        mention.toLowerCase().includes(string.toLowerCase())
-      );
-      callback(results);
+const lookupService = {
+  search(
+    string: string,
+    callback: (results: Array<MentionData>) => void,
+    mentionData: SearchData
+  ): void {
+    setTimeout(async () => {
+      const results = mentionData(string);
+      callback(await results);
     }, 500);
   },
 };
 
-function useMentionLookupService(mentionString: string | null) {
-  const [results, setResults] = useState<Array<string>>([]);
+function useMentionLookupService(
+  mentionString: string | null,
+  mentionData: SearchData
+) {
+  const [results, setResults] = useState<Array<MentionData>>([]);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);
@@ -190,10 +123,14 @@ function useMentionLookupService(mentionString: string | null) {
     }
 
     mentionsCache.set(mentionString, null);
-    dummyLookupService.search(mentionString, (newResults) => {
-      mentionsCache.set(mentionString, newResults);
-      setResults(newResults);
-    });
+    lookupService.search(
+      mentionString,
+      (newResults) => {
+        mentionsCache.set(mentionString, newResults);
+        setResults(newResults);
+      },
+      mentionData
+    );
   }, [mentionString]);
 
   return results;
@@ -255,11 +192,13 @@ function getPossibleQueryMatch(text: string): QueryMatch | null {
 class MentionTypeaheadOption extends TypeaheadOption {
   name: string;
   picture: JSX.Element;
+  url: string;
 
-  constructor(name: string, picture: JSX.Element) {
+  constructor(name: string, picture: JSX.Element, url?: string) {
     super(name);
     this.name = name;
     this.picture = picture;
+    this.url = url;
   }
 }
 
@@ -298,12 +237,17 @@ function MentionsTypeaheadMenuItem({
   );
 }
 
-export default function MentionsPlugin(): JSX.Element | null {
+export default function MentionsPlugin(props: {
+  searchData?: SearchData;
+  isLink?: boolean;
+}): JSX.Element | null {
+  const { searchData, isLink } = props;
+
   const [editor] = useLexicalComposerContext();
 
   const [queryString, setQueryString] = useState<string | null>(null);
 
-  const results = useMentionLookupService(queryString);
+  const results = useMentionLookupService(queryString, searchData);
 
   const checkForSlashTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     minLength: 0,
@@ -312,7 +256,10 @@ export default function MentionsPlugin(): JSX.Element | null {
   const options = useMemo(
     () =>
       results
-        .map((result) => new MentionTypeaheadOption(result, <i />))
+        .map(
+          (result) =>
+            new MentionTypeaheadOption(result.value, <i />, result.url)
+        )
         .slice(0, SUGGESTION_LIST_LENGTH_LIMIT),
     [results]
   );
@@ -324,7 +271,11 @@ export default function MentionsPlugin(): JSX.Element | null {
       closeMenu: () => void
     ) => {
       editor.update(() => {
-        const mentionNode = $createMentionNode(selectedOption.name);
+        const mentionNode = $createMentionNode(
+          selectedOption.name,
+          isLink,
+          selectedOption.url
+        );
         if (nodeToReplace) {
           nodeToReplace.replace(mentionNode);
         }
