@@ -5,12 +5,13 @@ import {
   TypeaheadOption,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import { TextNode } from 'lexical';
+import { $createTextNode, TextNode } from 'lexical';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import { $createMentionNode } from '../nodes/MentionNode';
+import { $createAutoLinkNode } from '@lexical/link';
 
 type MentionData = {
   value: string;
@@ -271,15 +272,21 @@ export default function MentionsPlugin(props: {
       closeMenu: () => void
     ) => {
       editor.update(() => {
-        const mentionNode = $createMentionNode(
-          selectedOption.name,
-          isLink,
-          selectedOption.url
-        );
         if (nodeToReplace) {
-          nodeToReplace.replace(mentionNode);
+          if (isLink) {
+            const linkNode = $createAutoLinkNode(selectedOption.url);
+            const textNode = $createTextNode(selectedOption.name);
+            textNode.setFormat(nodeToReplace.getFormat());
+            textNode.setDetail(nodeToReplace.getDetail());
+            linkNode.append(textNode);
+            nodeToReplace.replace(linkNode);
+            linkNode.select();
+          } else {
+            const mentionNode = $createMentionNode(selectedOption.name);
+            nodeToReplace.replace(mentionNode);
+            mentionNode.select();
+          }
         }
-        mentionNode.select();
         closeMenu();
       });
     },
