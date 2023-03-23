@@ -1,33 +1,46 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+import type { Spread } from "lexical";
 
-import type { EditorConfig, LexicalNode, NodeKey } from 'lexical';
-
-import SerializedTextNode from 'lexical';
-
-import { Spread } from 'globals';
-import { TextNode } from 'lexical';
+import {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+  TextNode
+} from "lexical";
 
 export type SerializedMentionNode = Spread<
   {
     mentionName: string;
-    type: 'mention';
+    type: "mention";
     version: 1;
   },
-  typeof SerializedTextNode
+  SerializedTextNode
 >;
 
-const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
+function convertMentionElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  const textContent = domNode.textContent;
+
+  if (textContent !== null) {
+    const node = $createMentionNode(textContent);
+    return {
+      node
+    };
+  }
+
+  return null;
+}
+
+const mentionStyle = "background-color: rgba(24, 119, 232, 0.2)";
 export class MentionNode extends TextNode {
   __mention: string;
 
   static getType(): string {
-    return 'mention';
+    return "mention";
   }
 
   static clone(node: MentionNode): MentionNode {
@@ -52,26 +65,55 @@ export class MentionNode extends TextNode {
     return {
       ...super.exportJSON(),
       mentionName: this.__mention,
-      type: 'mention',
-      version: 1,
+      type: "mention",
+      version: 1
     };
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;
-    dom.className = 'mention';
+    dom.className = "mention";
     return dom;
   }
 
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement("span");
+    element.setAttribute("data-lexical-mention", "true");
+    element.textContent = this.__text;
+    return { element };
+  }
+
+  isSegmented(): false {
+    return false;
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute("data-lexical-mention")) {
+          return null;
+        }
+        return {
+          conversion: convertMentionElement,
+          priority: 1
+        };
+      }
+    };
+  }
+
   isTextEntity(): true {
+    return true;
+  }
+
+  isToken(): true {
     return true;
   }
 }
 
 export function $createMentionNode(mentionName: string): MentionNode {
   const mentionNode = new MentionNode(mentionName);
-  mentionNode.setMode('segmented').toggleDirectionless();
+  mentionNode.setMode("segmented").toggleDirectionless();
   return mentionNode;
 }
 
