@@ -273,14 +273,13 @@ export default function MentionsPlugin(props: {
     ) => {
       editor.update(() => {
         if (nodeToReplace) {
+          const mentionNode = $createMentionNode(selectedOption.name);
           if (isLink) {
             const linkNode = $createAutoLinkNode(selectedOption.url);
-            const mentionNode = $createMentionNode(selectedOption.name);
             linkNode.append(mentionNode);
             nodeToReplace.replace(linkNode);
             linkNode.select();
           } else {
-            const mentionNode = $createMentionNode(selectedOption.name);
             nodeToReplace.replace(mentionNode);
             mentionNode.select();
           }
