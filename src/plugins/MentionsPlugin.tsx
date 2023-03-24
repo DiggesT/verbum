@@ -13,6 +13,8 @@ import * as ReactDOM from 'react-dom';
 import { $createMentionNode } from '../nodes/MentionNode';
 import { $createAutoLinkNode } from '@lexical/link';
 
+import './MentionsPlugin.css';
+
 type MentionData = {
   value: string;
   url?: string;
