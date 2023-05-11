@@ -50,11 +50,21 @@
   "size-limit": [
     {
       "path": "dist/verbum.cjs.production.min.js",
-      "limit": "10 KB"
+      "limit": "10 KB",
+      "ignore": [
+        "*.woff",
+        "*.woff2",
+        "*.ttf"
+      ]
     },
     {
       "path": "dist/verbum.esm.js",
-      "limit": "10 KB"
+      "limit": "10 KB",
+      "ignore": [
+        "*.woff",
+        "*.woff2",
+        "*.ttf"
+      ]
     }
   ],
   "devDependencies": {
